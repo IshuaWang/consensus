@@ -79,6 +79,17 @@ var (
 		&entity.APIKey{},
 		&entity.AIConversation{},
 		&entity.AIConversationRecord{},
+		&entity.Board{},
+		&entity.Topic{},
+		&entity.Post{},
+		&entity.WikiRevision{},
+		&entity.MergeJob{},
+		&entity.MergeJobPostRef{},
+		&entity.ContributionCredit{},
+		&entity.DocLink{},
+		&entity.TopicVote{},
+		&entity.PostVote{},
+		&entity.TopicSolution{},
 	}
 
 	roles = []*entity.Role{

@@ -36,3 +36,5 @@ dist/
 
 # Environment variables
 .env
+apps/web-next/node_modules
+apps/web-next/.next

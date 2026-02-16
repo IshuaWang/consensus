@@ -29,6 +29,17 @@ const (
 	ReportObjectType     = "report"
 	BadgeObjectType      = "badge"
 	BadgeAwardObjectType = "badge_award"
+	BoardObjectType      = "boards"
+	TopicObjectType      = "topics"
+	PostObjectType       = "posts"
+	WikiRevisionType     = "wiki_revisions"
+	MergeJobObjectType   = "merge_jobs"
+	MergeRefObjectType   = "merge_job_post_refs"
+	ContributionType     = "contribution_credits"
+	DocLinkObjectType    = "doc_links"
+	TopicVoteObjectType  = "topic_votes"
+	PostVoteObjectType   = "post_votes"
+	TopicSolutionType    = "topic_solutions"
 )
 
 var (
@@ -42,6 +53,17 @@ var (
 		ReportObjectType:     8,
 		BadgeObjectType:      9,
 		BadgeAwardObjectType: 10,
+		BoardObjectType:      11,
+		TopicObjectType:      12,
+		PostObjectType:       13,
+		WikiRevisionType:     14,
+		MergeJobObjectType:   15,
+		MergeRefObjectType:   16,
+		ContributionType:     17,
+		DocLinkObjectType:    18,
+		TopicVoteObjectType:  19,
+		PostVoteObjectType:   20,
+		TopicSolutionType:    21,
 	}
 
 	ObjectTypeNumberMapping = map[int]string{
@@ -54,5 +76,16 @@ var (
 		8:  ReportObjectType,
 		9:  BadgeObjectType,
 		10: BadgeAwardObjectType,
+		11: BoardObjectType,
+		12: TopicObjectType,
+		13: PostObjectType,
+		14: WikiRevisionType,
+		15: MergeJobObjectType,
+		16: MergeRefObjectType,
+		17: ContributionType,
+		18: DocLinkObjectType,
+		19: TopicVoteObjectType,
+		20: PostVoteObjectType,
+		21: TopicSolutionType,
 	}
 )

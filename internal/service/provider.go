@@ -41,6 +41,7 @@ import (
 	"github.com/apache/answer/internal/service/feature_toggle"
 	"github.com/apache/answer/internal/service/file_record"
 	"github.com/apache/answer/internal/service/follow"
+	"github.com/apache/answer/internal/service/forum"
 	"github.com/apache/answer/internal/service/importer"
 	"github.com/apache/answer/internal/service/meta"
 	metacommon "github.com/apache/answer/internal/service/meta_common"
@@ -86,6 +87,7 @@ var ProviderSetService = wire.NewSet(
 	content.NewQuestionService,
 	content.NewAnswerService,
 	export.NewEmailService,
+	forum.NewForumService,
 	tagcommon.NewTagCommonService,
 	usercommon.NewUserCommon,
 	questioncommon.NewQuestionCommon,

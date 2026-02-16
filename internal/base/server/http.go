@@ -96,6 +96,14 @@ func NewHTTPServer(debug bool,
 	authV1.Use(authUserMiddleware.MustAuthAndAccountAvailable())
 	answerRouter.RegisterAnswerAPIRouter(authV1)
 
+	// forum APIs
+	forumPublicV1 := r.Group(uiConf.APIBaseURL + "/api/v1")
+	forumPublicV1.Use(authUserMiddleware.Auth(), authUserMiddleware.EjectUserBySiteInfo())
+	answerRouter.RegisterForumPublicAPIRouter(forumPublicV1)
+	forumAuthV1 := r.Group(uiConf.APIBaseURL + "/api/v1")
+	forumAuthV1.Use(authUserMiddleware.MustAuthAndAccountAvailable())
+	answerRouter.RegisterForumAuthAPIRouter(forumAuthV1)
+
 	adminauthV1 := r.Group(uiConf.APIBaseURL + "/answer/admin/api")
 	adminauthV1.Use(authUserMiddleware.AdminAuth())
 	answerRouter.RegisterAnswerAdminAPIRouter(adminauthV1)

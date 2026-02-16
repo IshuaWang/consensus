@@ -62,6 +62,7 @@ type AnswerAPIRouter struct {
 	aiConversationController      *controller.AIConversationController
 	aiConversationAdminController *controller_admin.AIConversationAdminController
 	mcpController                 *controller.MCPController
+	forumController               *controller.ForumController
 }
 
 func NewAnswerAPIRouter(
@@ -100,6 +101,7 @@ func NewAnswerAPIRouter(
 	aiConversationController *controller.AIConversationController,
 	aiConversationAdminController *controller_admin.AIConversationAdminController,
 	mcpController *controller.MCPController,
+	forumController *controller.ForumController,
 ) *AnswerAPIRouter {
 	return &AnswerAPIRouter{
 		langController:                langController,
@@ -137,6 +139,7 @@ func NewAnswerAPIRouter(
 		aiConversationController:      aiConversationController,
 		aiConversationAdminController: aiConversationAdminController,
 		mcpController:                 mcpController,
+		forumController:               forumController,
 	}
 }
 
@@ -220,6 +223,35 @@ func (a *AnswerAPIRouter) RegisterAuthUserWithAnyStatusAnswerAPIRouter(r *gin.Ro
 	r.GET("/user/logout", a.userController.UserLogout)
 	r.POST("/user/email/change/code", middleware.BanAPIForUserCenter, a.userController.UserChangeEmailSendCode)
 	r.POST("/user/email/verification/send", middleware.BanAPIForUserCenter, a.userController.UserVerifyEmailSend)
+}
+
+func (a *AnswerAPIRouter) RegisterForumPublicAPIRouter(r *gin.RouterGroup) {
+	r.GET("/boards/:id/topics", a.forumController.ListBoardTopics)
+	r.GET("/topics/:id/wiki", a.forumController.GetTopicWiki)
+	r.GET("/topics/:id/wiki/revisions", a.forumController.ListTopicWikiRevisions)
+	r.GET("/topics/:id/merge-jobs/:jobId", a.forumController.GetMergeJob)
+	r.GET("/topics/:id/contributors", a.forumController.ListTopicContributors)
+	r.GET("/docs/graph", a.forumController.GetDocGraph)
+	r.GET("/platform/plugins", a.forumController.GetPlatformPlugins)
+	r.GET("/platform/config", a.forumController.GetPlatformConfig)
+}
+
+func (a *AnswerAPIRouter) RegisterForumAuthAPIRouter(r *gin.RouterGroup) {
+	r.POST("/boards", a.forumController.CreateBoard)
+	r.POST("/topics", a.forumController.CreateTopic)
+	r.POST("/topics/:id/posts", a.forumController.CreateTopicPost)
+
+	r.POST("/topics/:id/wiki/revisions", a.forumController.CreateTopicWikiRevision)
+	r.POST("/topics/:id/merge-jobs", a.forumController.CreateMergeJob)
+	r.POST("/topics/:id/merge-jobs/:jobId/apply", a.forumController.ApplyMergeJob)
+
+	r.POST("/docs/links", a.forumController.CreateDocLink)
+
+	r.POST("/topics/:id/solution", a.forumController.SetTopicSolution)
+	r.POST("/posts/:id/votes", a.forumController.VotePost)
+	r.POST("/topics/:id/votes", a.forumController.VoteTopic)
+
+	r.POST("/platform/plugins/:id/config", a.forumController.UpdatePlatformPluginConfig)
 }
 
 func (a *AnswerAPIRouter) RegisterAnswerAPIRouter(r *gin.RouterGroup) {
