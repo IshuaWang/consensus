@@ -1,4 +1,8 @@
+import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { getContributors, getDocGraph, getTopicWiki } from "@/lib/api";
+import { ApiRequestError, createTopicPost } from "@/lib/api";
+import { PostCreateForm, type PostCreateState } from "@/components/post-create-form";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -6,6 +10,37 @@ type Props = {
 
 export default async function TopicPage({ params }: Props) {
   const { id } = await params;
+  const createPostAction = async (
+    _state: PostCreateState,
+    formData: FormData
+  ): Promise<PostCreateState> => {
+    "use server";
+    const text = String(formData.get("original_text") ?? "").trim();
+    if (!text) {
+      return { error: "Reply content is required.", message: null };
+    }
+    try {
+      await createTopicPost(
+        id,
+        { original_text: text },
+        { cookieHeader: (await cookies()).toString() }
+      );
+      revalidatePath(`/topics/${id}`);
+      return { error: null, message: "Reply submitted." };
+    } catch (err) {
+      if (err instanceof ApiRequestError) {
+        if (err.status === 401 || err.status === 403) {
+          return {
+            error: "Post reply failed: login required in Answer.",
+            message: null
+          };
+        }
+        return { error: `Post reply failed: ${err.message}`, message: null };
+      }
+      return { error: "Post reply failed: unknown error.", message: null };
+    }
+  };
+
   const [wiki, contributors, graph] = await Promise.all([
     getTopicWiki(id),
     getContributors(id),
@@ -61,7 +96,10 @@ export default async function TopicPage({ params }: Props) {
           </ul>
         </article>
       </section>
+
+      <section className="compose-wrap">
+        <PostCreateForm action={createPostAction} />
+      </section>
     </main>
   );
 }
-

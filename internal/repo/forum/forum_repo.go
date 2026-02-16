@@ -127,12 +127,15 @@ func (r *ForumRepo) ListTopicsByBoard(ctx context.Context, boardID string, page,
 	}
 
 	topics := make([]*entity.Topic, 0)
-	session := r.data.DB.Context(ctx).Where("board_id = ?", uid.DeShortID(boardID)).Desc("created_at")
-	total, err := session.Clone().Count(&entity.Topic{})
+	total, err := r.data.DB.Context(ctx).Where("board_id = ?", uid.DeShortID(boardID)).Count(&entity.Topic{})
 	if err != nil {
 		return nil, 0, errors.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 	}
-	if err := session.Limit(pageSize, (page-1)*pageSize).Find(&topics); err != nil {
+	if err := r.data.DB.Context(ctx).
+		Where("board_id = ?", uid.DeShortID(boardID)).
+		Desc("created_at").
+		Limit(pageSize, (page-1)*pageSize).
+		Find(&topics); err != nil {
 		return nil, 0, errors.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 	}
 	return topics, total, nil

@@ -111,10 +111,16 @@ func addUniqueID(questionID, answerID string, linkType int, uniqueIDs map[string
 	}
 
 	if objectType, err := obj.GetObjectTypeStrByObjectID(uid.DeShortID(questionID)); err == nil {
-		if _, ok := uniqueIDs[questionID]; !ok {
-			uniqueIDs[questionID] = struct{}{}
-			isAdd = true
-			if objectType == constant.AnswerObjectType {
+		switch objectType {
+		case constant.QuestionObjectType:
+			if _, ok := uniqueIDs[questionID]; !ok {
+				uniqueIDs[questionID] = struct{}{}
+				isAdd = true
+			}
+		case constant.AnswerObjectType:
+			if _, ok := uniqueIDs[questionID]; !ok {
+				uniqueIDs[questionID] = struct{}{}
+				isAdd = true
 				answerID = questionID
 				questionID = ""
 			}

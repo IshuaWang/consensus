@@ -54,11 +54,11 @@ type CreateMergeJobReq struct {
 }
 
 type ApplyMergeJobReq struct {
-	Title       string `validate:"required,gt=1,lte=180" json:"title"`
-	Document    string `validate:"required,notblank,gte=2,lte=200000" json:"document"`
-	Summary     string `validate:"omitempty,lte=500" json:"summary"`
-	ReviewerID  string `json:"-"`
-	OperatorID  string `json:"-"`
+	Title              string `validate:"required,gt=1,lte=180" json:"title"`
+	Document           string `validate:"required,notblank,gte=2,lte=200000" json:"document"`
+	Summary            string `validate:"omitempty,lte=500" json:"summary"`
+	ReviewerID         string `json:"-"`
+	OperatorID         string `json:"-"`
 	ContributionWeight int `json:"contribution_weight"`
 }
 
@@ -73,7 +73,7 @@ type SetTopicSolutionReq struct {
 	UserID string `json:"-"`
 }
 
-type VoteReq struct {
+type ForumVoteReq struct {
 	Value  int    `validate:"required,oneof=-1 1" json:"value"`
 	UserID string `json:"-"`
 }
@@ -91,4 +91,3 @@ type GetDocGraphReq struct {
 type PlatformPluginConfigReq struct {
 	ConfigFields map[string]any `json:"config_fields"`
 }
-

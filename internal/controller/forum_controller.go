@@ -172,7 +172,7 @@ func (fc *ForumController) SetTopicSolution(ctx *gin.Context) {
 }
 
 func (fc *ForumController) VotePost(ctx *gin.Context) {
-	req := &schema.VoteReq{}
+	req := &schema.ForumVoteReq{}
 	if handler.BindAndCheck(ctx, req) {
 		return
 	}
@@ -182,7 +182,7 @@ func (fc *ForumController) VotePost(ctx *gin.Context) {
 }
 
 func (fc *ForumController) VoteTopic(ctx *gin.Context) {
-	req := &schema.VoteReq{}
+	req := &schema.ForumVoteReq{}
 	if handler.BindAndCheck(ctx, req) {
 		return
 	}

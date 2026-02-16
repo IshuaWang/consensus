@@ -1,0 +1,25 @@
+debug: false
+server:
+  http:
+    addr: 0.0.0.0:9080
+data:
+  database:
+    driver: sqlite3
+    connection: /home/ishua/project/consensus/data/sqlite3/answer.db
+  cache:
+    file_path: /home/ishua/project/consensus/data/cache/cache.db
+i18n:
+  bundle_dir: /home/ishua/project/consensus/data/i18n
+service_config:
+  upload_path: /home/ishua/project/consensus/data/uploads
+  clean_up_uploads: true
+  clean_orphan_uploads_period_hours: 48
+  purge_deleted_files_period_days: 30
+swaggerui:
+  show: true
+  protocol: http
+  host: 127.0.0.1
+  address: ':9080'
+ui:
+  base_url: ""
+  api_base_url: ""

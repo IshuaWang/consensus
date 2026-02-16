@@ -199,6 +199,83 @@ h3 {
   font-weight: 700;
 }
 
+.compose-wrap {
+  margin-top: 16px;
+}
+
+.compose-form {
+  display: grid;
+  gap: 10px;
+}
+
+.form-tip {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.94rem;
+}
+
+.compose-form label {
+  font-family: var(--font-heading), sans-serif;
+  font-size: 0.95rem;
+}
+
+.compose-form input,
+.compose-form select,
+.compose-form textarea {
+  width: 100%;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #fff;
+  color: var(--ink);
+  font-family: var(--font-body), serif;
+}
+
+.compose-form textarea {
+  resize: vertical;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-body), serif;
+}
+
+.checkbox-row input {
+  width: auto;
+}
+
+.compose-form button {
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  background: var(--accent);
+  color: #fff;
+  padding: 10px 14px;
+  font-family: var(--font-heading), sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.compose-form button:disabled {
+  opacity: 0.64;
+  cursor: default;
+}
+
+.form-error,
+.form-success {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.form-error {
+  color: #8d0f02;
+}
+
+.form-success {
+  color: #156108;
+}
+
 .topic-shell .topic-grid {
   display: grid;
   grid-template-columns: 1.4fr 1fr;
@@ -266,4 +343,3 @@ h3 {
     grid-template-columns: 1fr;
   }
 }
-

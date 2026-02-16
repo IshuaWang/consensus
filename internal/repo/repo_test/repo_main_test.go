@@ -57,7 +57,7 @@ var (
 	}
 	sqlite3DBSetting = TestDBSetting{
 		Driver:     string(schemas.SQLITE),
-		Connection: filepath.Join(os.TempDir(), "answer-test-data.db"),
+		Connection: filepath.Join(os.TempDir(), "answer-repo-test-data.db"),
 	}
 	dbSettingMapping = map[string]TestDBSetting{
 		mysqlDBSetting.Driver:    mysqlDBSetting,

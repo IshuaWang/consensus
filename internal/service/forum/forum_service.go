@@ -418,7 +418,7 @@ func (s *ForumService) SetTopicSolution(ctx context.Context, topicID string, req
 	return s.forumRepo.UpsertTopicSolution(ctx, topicID, req.PostID, req.UserID)
 }
 
-func (s *ForumService) VotePost(ctx context.Context, postID string, req *schema.VoteReq) error {
+func (s *ForumService) VotePost(ctx context.Context, postID string, req *schema.ForumVoteReq) error {
 	_, exist, err := s.forumRepo.GetPost(ctx, postID)
 	if err != nil {
 		return err
@@ -429,7 +429,7 @@ func (s *ForumService) VotePost(ctx context.Context, postID string, req *schema.
 	return s.forumRepo.UpsertPostVote(ctx, postID, req.UserID, req.Value)
 }
 
-func (s *ForumService) VoteTopic(ctx context.Context, topicID string, req *schema.VoteReq) error {
+func (s *ForumService) VoteTopic(ctx context.Context, topicID string, req *schema.ForumVoteReq) error {
 	_, exist, err := s.forumRepo.GetTopic(ctx, topicID)
 	if err != nil {
 		return err
