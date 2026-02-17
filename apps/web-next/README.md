@@ -27,9 +27,14 @@ The app currently reads forum APIs from `/api/v1`.
 Current MVP pages:
 - `GET /boards/:id`: topic list + create topic form
 - `GET /topics/:id`: wiki/contributors/graph + add reply form
+- `GET /login`: sign in for `web-next` write actions
+- `GET /`: create board + jump to board
 
-For create/reply actions, backend auth is required. Log in on Answer backend first
-on the same host (prefer `127.0.0.1`) so cookies can be forwarded.
+For create/reply actions, backend auth is required:
+1. Open `http://localhost:3001/login`
+2. Sign in with Answer account (example: `admin@example.com`)
+3. Token is stored in `httpOnly` cookie for server actions
+4. Create your first board on `/`, then create topics under that board
 
 ## Dev fallback
 

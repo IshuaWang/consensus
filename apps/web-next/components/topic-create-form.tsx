@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 
 export type TopicCreateState = {
@@ -20,7 +21,9 @@ export function TopicCreateForm({ action }: Props) {
   return (
     <form className="panel compose-form" action={formAction}>
       <h2>Create Topic</h2>
-      <p className="form-tip">This writes to Answer forum APIs. You need a valid login session.</p>
+      <p className="form-tip">
+        This writes to Answer forum APIs. Sign in first at <Link href="/login">/login</Link>.
+      </p>
       <label htmlFor="topic-title">Title</label>
       <input
         id="topic-title"

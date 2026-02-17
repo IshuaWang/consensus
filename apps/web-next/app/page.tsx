@@ -1,7 +1,55 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { BoardJump } from "@/components/board-jump";
+import { BoardCreateForm, type BoardCreateState } from "@/components/board-create-form";
+import { ANSWER_TOKEN_COOKIE } from "@/lib/auth";
+import { ApiRequestError, createBoard } from "@/lib/api";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const createBoardAction = async (
+    _state: BoardCreateState,
+    formData: FormData
+  ): Promise<BoardCreateState> => {
+    "use server";
+    const slug = String(formData.get("slug") ?? "").trim();
+    const name = String(formData.get("name") ?? "").trim();
+    const description = String(formData.get("description") ?? "").trim();
+    if (!slug || !name) {
+      return { error: "Board slug and name are required." };
+    }
+    const authToken = (await cookies()).get(ANSWER_TOKEN_COOKIE)?.value;
+    if (!authToken) {
+      return {
+        error: "Create board failed: login required. Open /login first."
+      };
+    }
+    let boardID = "";
+    try {
+      const board = await createBoard(
+        {
+          slug,
+          name,
+          description
+        },
+        { authToken }
+      );
+      boardID = board.id;
+    } catch (err) {
+      if (err instanceof ApiRequestError) {
+        if (err.status === 401 || err.status === 403) {
+          return { error: "Create board failed: admin/moderator permission required." };
+        }
+        return { error: `Create board failed: ${err.message}` };
+      }
+      return { error: "Create board failed: unknown error." };
+    }
+    if (!boardID) {
+      return { error: "Create board failed: invalid backend response (missing board id)." };
+    }
+    redirect(`/boards/${boardID}`);
+  };
+
   return (
     <main className="shell">
       <section className="hero">
@@ -33,11 +81,19 @@ export default function HomePage() {
 
       <section className="entry">
         <BoardJump />
-        <Link className="entry-link" href="/boards/demo-board-id">
-          Open Demo Board
-        </Link>
+        <div className="entry-stack">
+          <Link className="entry-link" href="/login">
+            Sign In To Post
+          </Link>
+          <p className="entry-tip">
+            `demo-board-id` is only a placeholder. Create a board first to get a real board ID.
+          </p>
+        </div>
+      </section>
+
+      <section className="compose-wrap">
+        <BoardCreateForm action={createBoardAction} />
       </section>
     </main>
   );
 }
-

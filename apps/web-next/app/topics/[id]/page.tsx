@@ -1,8 +1,8 @@
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
-import { getContributors, getDocGraph, getTopicWiki } from "@/lib/api";
-import { ApiRequestError, createTopicPost } from "@/lib/api";
+import { ApiRequestError, createTopicPost, getContributors, getDocGraph, getTopicWiki } from "@/lib/api";
 import { PostCreateForm, type PostCreateState } from "@/components/post-create-form";
+import { ANSWER_TOKEN_COOKIE } from "@/lib/auth";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -19,12 +19,15 @@ export default async function TopicPage({ params }: Props) {
     if (!text) {
       return { error: "Reply content is required.", message: null };
     }
+    const authToken = (await cookies()).get(ANSWER_TOKEN_COOKIE)?.value;
+    if (!authToken) {
+      return {
+        error: `Post reply failed: login required. Open /login?from=${encodeURIComponent(`/topics/${id}`)}`,
+        message: null
+      };
+    }
     try {
-      await createTopicPost(
-        id,
-        { original_text: text },
-        { cookieHeader: (await cookies()).toString() }
-      );
+      await createTopicPost(id, { original_text: text }, { authToken });
       revalidatePath(`/topics/${id}`);
       return { error: null, message: "Reply submitted." };
     } catch (err) {
@@ -41,10 +44,12 @@ export default async function TopicPage({ params }: Props) {
     }
   };
 
+  const token = (await cookies()).get(ANSWER_TOKEN_COOKIE)?.value;
+  const auth = token ? { authToken: token } : undefined;
   const [wiki, contributors, graph] = await Promise.all([
-    getTopicWiki(id),
-    getContributors(id),
-    getDocGraph(id)
+    getTopicWiki(id, auth),
+    getContributors(id, auth),
+    getDocGraph(id, auth)
   ]);
 
   return (

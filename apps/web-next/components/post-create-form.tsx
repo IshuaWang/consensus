@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 
 export type PostCreateState = {
@@ -22,7 +23,10 @@ export function PostCreateForm({ action }: Props) {
   return (
     <form className="panel compose-form" action={formAction}>
       <h2>Add Reply</h2>
-      <p className="form-tip">Reply content can be merged into wiki revisions by moderators later.</p>
+      <p className="form-tip">
+        Reply content can be merged into wiki revisions by moderators later. Sign in at{" "}
+        <Link href="/login">/login</Link>.
+      </p>
       <label htmlFor="post-content">Reply content</label>
       <textarea
         id="post-content"
