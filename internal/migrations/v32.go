@@ -29,7 +29,7 @@ import (
 
 func addForumCore(ctx context.Context, x *xorm.Engine) error {
 	if err := x.Context(ctx).Sync(
-		new(entity.Board),
+		new(entity.Category),
 		new(entity.Topic),
 		new(entity.Post),
 		new(entity.WikiRevision),
@@ -45,4 +45,3 @@ func addForumCore(ctx context.Context, x *xorm.Engine) error {
 	}
 	return nil
 }
-

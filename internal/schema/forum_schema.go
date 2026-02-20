@@ -19,7 +19,7 @@
 
 package schema
 
-type CreateBoardReq struct {
+type CreateCategoryReq struct {
 	Slug        string `validate:"required,gt=1,lte=100" json:"slug"`
 	Name        string `validate:"required,gt=1,lte=120" json:"name"`
 	Description string `validate:"omitempty,lte=500" json:"description"`
@@ -27,7 +27,7 @@ type CreateBoardReq struct {
 }
 
 type CreateTopicReq struct {
-	BoardID       string `validate:"required" json:"board_id"`
+	CategoryID    string `validate:"required" json:"category_id"`
 	Title         string `validate:"required,gt=1,lte=180" json:"title"`
 	TopicKind     string `validate:"required,oneof=discussion knowledge" json:"topic_kind"`
 	IsWikiEnabled bool   `json:"is_wiki_enabled"`
@@ -59,7 +59,13 @@ type ApplyMergeJobReq struct {
 	Summary            string `validate:"omitempty,lte=500" json:"summary"`
 	ReviewerID         string `json:"-"`
 	OperatorID         string `json:"-"`
-	ContributionWeight int `json:"contribution_weight"`
+	ContributionWeight int    `json:"contribution_weight"`
+}
+
+type MergeJobListReq struct {
+	Page     int    `validate:"omitempty,min=1" form:"page"`
+	PageSize int    `validate:"omitempty,min=1,max=100" form:"page_size"`
+	Status   string `validate:"omitempty,oneof=pending reviewed applied" form:"status"`
 }
 
 type CreateDocLinkReq struct {
@@ -79,6 +85,16 @@ type ForumVoteReq struct {
 }
 
 type TopicListReq struct {
+	Page     int `validate:"omitempty,min=1" form:"page"`
+	PageSize int `validate:"omitempty,min=1,max=100" form:"page_size"`
+}
+
+type CategoryListReq struct {
+	Page     int `validate:"omitempty,min=1" form:"page"`
+	PageSize int `validate:"omitempty,min=1,max=100" form:"page_size"`
+}
+
+type PostListReq struct {
 	Page     int `validate:"omitempty,min=1" form:"page"`
 	PageSize int `validate:"omitempty,min=1,max=100" form:"page_size"`
 }

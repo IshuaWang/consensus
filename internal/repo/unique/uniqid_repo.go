@@ -22,6 +22,8 @@ package unique
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/apache/answer/internal/base/constant"
 	"github.com/apache/answer/internal/base/data"
@@ -47,10 +49,25 @@ func NewUniqueIDRepo(data *data.Data) unique.UniqueIDRepo {
 // 1 + 00x(objectType) + 000000000000x(id)
 func (ur *uniqueIDRepo) GenUniqueIDStr(ctx context.Context, key string) (uniqueID string, err error) {
 	objectType := constant.ObjectTypeStrMapping[key]
-	bean := &entity.Uniqid{UniqidType: objectType}
-	_, err = ur.data.DB.Context(ctx).Insert(bean)
-	if err != nil {
-		return "", errors.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	const maxRetries = 5
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		bean := &entity.Uniqid{UniqidType: objectType}
+		_, err = ur.data.DB.Context(ctx).Insert(bean)
+		if err == nil {
+			return fmt.Sprintf("1%03d%013d", objectType, bean.ID), nil
+		}
+		if !isSQLiteBusyError(err) || attempt == maxRetries-1 {
+			return "", errors.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+		}
+		time.Sleep(time.Duration(attempt+1) * 50 * time.Millisecond)
 	}
-	return fmt.Sprintf("1%03d%013d", objectType, bean.ID), nil
+	return "", errors.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+}
+
+func isSQLiteBusyError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "SQLITE_BUSY") || strings.Contains(msg, "database is locked")
 }

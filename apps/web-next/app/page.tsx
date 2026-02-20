@@ -1,32 +1,31 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { BoardJump } from "@/components/board-jump";
-import { BoardCreateForm, type BoardCreateState } from "@/components/board-create-form";
+import { CategoryCreateForm, type CategoryCreateState } from "@/components/category-create-form";
 import { ANSWER_TOKEN_COOKIE } from "@/lib/auth";
-import { ApiRequestError, createBoard } from "@/lib/api";
+import { ApiRequestError, createCategory, getCategories } from "@/lib/api";
 
 export default async function HomePage() {
-  const createBoardAction = async (
-    _state: BoardCreateState,
+  const createCategoryAction = async (
+    _state: CategoryCreateState,
     formData: FormData
-  ): Promise<BoardCreateState> => {
+  ): Promise<CategoryCreateState> => {
     "use server";
     const slug = String(formData.get("slug") ?? "").trim();
     const name = String(formData.get("name") ?? "").trim();
     const description = String(formData.get("description") ?? "").trim();
     if (!slug || !name) {
-      return { error: "Board slug and name are required." };
+      return { error: "Category slug and name are required." };
     }
     const authToken = (await cookies()).get(ANSWER_TOKEN_COOKIE)?.value;
     if (!authToken) {
       return {
-        error: "Create board failed: login required. Open /login first."
+        error: "Create category failed: login required. Open /login first."
       };
     }
-    let boardID = "";
+    let categoryID = "";
     try {
-      const board = await createBoard(
+      const category = await createCategory(
         {
           slug,
           name,
@@ -34,21 +33,35 @@ export default async function HomePage() {
         },
         { authToken }
       );
-      boardID = board.id;
+      categoryID = category.id;
     } catch (err) {
       if (err instanceof ApiRequestError) {
         if (err.status === 401 || err.status === 403) {
-          return { error: "Create board failed: admin/moderator permission required." };
+          return { error: "Create category failed: admin/moderator permission required." };
         }
-        return { error: `Create board failed: ${err.message}` };
+        return { error: `Create category failed: ${err.message}` };
       }
-      return { error: "Create board failed: unknown error." };
+      return { error: "Create category failed: unknown error." };
     }
-    if (!boardID) {
-      return { error: "Create board failed: invalid backend response (missing board id)." };
+    if (!categoryID) {
+      return { error: "Create category failed: invalid backend response (missing category id)." };
     }
-    redirect(`/boards/${boardID}`);
+    redirect(`/categories/${categoryID}`);
   };
+  let categories: Awaited<ReturnType<typeof getCategories>>["list"] = [];
+  let total = 0;
+  let listError = "";
+  try {
+    const resp = await getCategories();
+    categories = resp.list;
+    total = resp.total;
+  } catch (err) {
+    if (err instanceof ApiRequestError) {
+      listError = `Failed to load categories: ${err.message}`;
+    } else {
+      listError = "Failed to load categories: unknown error.";
+    }
+  }
 
   return (
     <main className="shell">
@@ -79,20 +92,50 @@ export default async function HomePage() {
         </article>
       </section>
 
-      <section className="entry">
-        <BoardJump />
+      <section className="category-list-wrap panel">
+        <header className="category-list-head">
+          <h2>Categories</h2>
+          <p>{total} total</p>
+        </header>
+        {listError ? (
+          <p className="form-error">{listError}</p>
+        ) : categories.length === 0 ? (
+          <p className="empty">No categories yet. Create the first category below.</p>
+        ) : (
+          <ul className="category-list">
+            {categories.map((category) => (
+              <li key={category.id}>
+                <Link href={`/categories/${category.id}`}>
+                  <article className="topic-card">
+                    <header>
+                      <span className="chip">category</span>
+                    </header>
+                    <h3>{category.name}</h3>
+                    <p>{category.description || "No description yet."}</p>
+                    <p className="category-meta">
+                      <code>{category.slug}</code> · <code>{category.id}</code>
+                    </p>
+                  </article>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="entry entry-single">
         <div className="entry-stack">
           <Link className="entry-link" href="/login">
             Sign In To Post
           </Link>
           <p className="entry-tip">
-            `demo-board-id` is only a placeholder. Create a board first to get a real board ID.
+            Topics can only be created inside a category. Pick one above or create a new category.
           </p>
         </div>
       </section>
 
       <section className="compose-wrap">
-        <BoardCreateForm action={createBoardAction} />
+        <CategoryCreateForm action={createCategoryAction} />
       </section>
     </main>
   );

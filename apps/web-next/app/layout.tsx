@@ -39,7 +39,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               Consensus
             </Link>
             <nav className="topbar-nav">
-              <Link href="/boards/demo-board-id">Demo Board</Link>
+              <Link href="/categories/demo-category-id">Demo Category</Link>
               {hasToken ? (
                 <form action={logoutAction}>
                   <button type="submit">Sign Out</button>

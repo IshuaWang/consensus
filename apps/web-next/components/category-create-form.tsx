@@ -2,56 +2,55 @@
 
 import { useActionState } from "react";
 
-export type BoardCreateState = {
+export type CategoryCreateState = {
   error: string | null;
 };
 
-const initialState: BoardCreateState = {
+const initialState: CategoryCreateState = {
   error: null
 };
 
 type Props = {
-  action: (state: BoardCreateState, formData: FormData) => Promise<BoardCreateState>;
+  action: (state: CategoryCreateState, formData: FormData) => Promise<CategoryCreateState>;
 };
 
-export function BoardCreateForm({ action }: Props) {
+export function CategoryCreateForm({ action }: Props) {
   const [state, formAction, pending] = useActionState(action, initialState);
 
   return (
     <form className="panel compose-form" action={formAction}>
-      <h2>Create Board</h2>
+      <h2>Create Category</h2>
       <p className="form-tip">
-        Create a real board first, then create topics under that board.
+        Create a real category first, then create topics under that category.
       </p>
-      <label htmlFor="board-slug">Slug</label>
+      <label htmlFor="category-slug">Category Slug</label>
       <input
-        id="board-slug"
+        id="category-slug"
         name="slug"
         required
         maxLength={100}
         placeholder="life-skills"
       />
-      <label htmlFor="board-name">Name</label>
+      <label htmlFor="category-name">Category Name</label>
       <input
-        id="board-name"
+        id="category-name"
         name="name"
         required
         maxLength={120}
         placeholder="Life Skills"
       />
-      <label htmlFor="board-description">Description</label>
+      <label htmlFor="category-description">Description</label>
       <textarea
-        id="board-description"
+        id="category-description"
         name="description"
         rows={3}
         maxLength={500}
-        placeholder="Scope and posting rules for this board..."
+        placeholder="Scope and posting rules for this category..."
       />
       {state.error && <p className="form-error">{state.error}</p>}
       <button disabled={pending} type="submit">
-        {pending ? "Creating..." : "Create Board"}
+        {pending ? "Creating..." : "Create Category"}
       </button>
     </form>
   );
 }
-

@@ -91,6 +91,20 @@ func NewDB(debug bool, dataConf *Database) (*xorm.Engine, error) {
 		engine.SetConnMaxLifetime(time.Duration(dataConf.ConnMaxLifeTime) * time.Second)
 	}
 	engine.SetColumnMapper(names.GonicMapper{})
+
+	// SQLite is sensitive to concurrent writes; tune pragmas to reduce SQLITE_BUSY.
+	if dataConf.Driver == "sqlite" {
+		if _, err = engine.Exec("PRAGMA journal_mode=WAL;"); err != nil {
+			log.Warnf("set sqlite journal_mode failed: %v", err)
+		}
+		if _, err = engine.Exec("PRAGMA synchronous=NORMAL;"); err != nil {
+			log.Warnf("set sqlite synchronous failed: %v", err)
+		}
+		if _, err = engine.Exec("PRAGMA busy_timeout=10000;"); err != nil {
+			log.Warnf("set sqlite busy_timeout failed: %v", err)
+		}
+	}
+
 	return engine, nil
 }
 

@@ -37,6 +37,21 @@ type ContributorStat struct {
 	Weight int    `xorm:"weight"`
 }
 
+type TopicPostView struct {
+	ID                string     `json:"id" xorm:"id"`
+	TopicID           string     `json:"topic_id" xorm:"topic_id"`
+	UserID            string     `json:"user_id" xorm:"user_id"`
+	OriginalText      string     `json:"original_text" xorm:"original_text"`
+	ParsedText        string     `json:"parsed_text" xorm:"parsed_text"`
+	MergeState        string     `json:"merge_state" xorm:"merge_state"`
+	ArchivedAt        *time.Time `json:"archived_at" xorm:"archived_at"`
+	VoteCount         int        `json:"vote_count" xorm:"vote_count"`
+	Status            int        `json:"status" xorm:"status"`
+	CreatedAt         time.Time  `json:"created_at" xorm:"created_at"`
+	AuthorUsername    string     `json:"author_username" xorm:"author_username"`
+	AuthorDisplayName string     `json:"author_display_name" xorm:"author_display_name"`
+}
+
 type ForumRepo struct {
 	data         *data.Data
 	uniqueIDRepo unique.UniqueIDRepo
@@ -57,25 +72,51 @@ func (r *ForumRepo) genID(ctx context.Context, table string) (string, error) {
 	return id, nil
 }
 
-func (r *ForumRepo) AddBoard(ctx context.Context, board *entity.Board) error {
-	id, err := r.genID(ctx, board.TableName())
+func (r *ForumRepo) AddCategory(ctx context.Context, category *entity.Category) error {
+	id, err := r.genID(ctx, category.TableName())
 	if err != nil {
 		return err
 	}
-	board.ID = id
-	if _, err = r.data.DB.Context(ctx).Insert(board); err != nil {
+	category.ID = id
+	if _, err = r.data.DB.Context(ctx).Insert(category); err != nil {
 		return errors.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 	}
 	return nil
 }
 
-func (r *ForumRepo) GetBoard(ctx context.Context, boardID string) (*entity.Board, bool, error) {
-	board := &entity.Board{ID: uid.DeShortID(boardID)}
-	exist, err := r.data.DB.Context(ctx).Get(board)
+func (r *ForumRepo) GetCategory(ctx context.Context, categoryID string) (*entity.Category, bool, error) {
+	category := &entity.Category{ID: uid.DeShortID(categoryID)}
+	exist, err := r.data.DB.Context(ctx).Get(category)
 	if err != nil {
 		return nil, false, errors.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 	}
-	return board, exist, nil
+	return category, exist, nil
+}
+
+func (r *ForumRepo) ListCategories(ctx context.Context, page, pageSize int) ([]*entity.Category, int64, error) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 20
+	}
+	if pageSize > 100 {
+		pageSize = 100
+	}
+
+	categories := make([]*entity.Category, 0)
+	total, err := r.data.DB.Context(ctx).Where("status = ?", 1).Count(&entity.Category{})
+	if err != nil {
+		return nil, 0, errors.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+	if err := r.data.DB.Context(ctx).
+		Where("status = ?", 1).
+		Desc("created_at").
+		Limit(pageSize, (page-1)*pageSize).
+		Find(&categories); err != nil {
+		return nil, 0, errors.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+	return categories, total, nil
 }
 
 func (r *ForumRepo) AddTopic(ctx context.Context, topic *entity.Topic) error {
@@ -115,7 +156,7 @@ func (r *ForumRepo) UpdateTopic(ctx context.Context, topic *entity.Topic, cols .
 	return nil
 }
 
-func (r *ForumRepo) ListTopicsByBoard(ctx context.Context, boardID string, page, pageSize int) ([]*entity.Topic, int64, error) {
+func (r *ForumRepo) ListTopicsByCategory(ctx context.Context, categoryID string, page, pageSize int) ([]*entity.Topic, int64, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -127,12 +168,12 @@ func (r *ForumRepo) ListTopicsByBoard(ctx context.Context, boardID string, page,
 	}
 
 	topics := make([]*entity.Topic, 0)
-	total, err := r.data.DB.Context(ctx).Where("board_id = ?", uid.DeShortID(boardID)).Count(&entity.Topic{})
+	total, err := r.data.DB.Context(ctx).Where("category_id = ?", uid.DeShortID(categoryID)).Count(&entity.Topic{})
 	if err != nil {
 		return nil, 0, errors.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 	}
 	if err := r.data.DB.Context(ctx).
-		Where("board_id = ?", uid.DeShortID(boardID)).
+		Where("category_id = ?", uid.DeShortID(categoryID)).
 		Desc("created_at").
 		Limit(pageSize, (page-1)*pageSize).
 		Find(&topics); err != nil {
@@ -190,6 +231,49 @@ func (r *ForumRepo) GetPostsByIDs(ctx context.Context, topicID string, postIDs [
 	return posts, nil
 }
 
+func (r *ForumRepo) ListTopicPosts(ctx context.Context, topicID string, page, pageSize int) ([]*TopicPostView, int64, error) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 30
+	}
+	if pageSize > 100 {
+		pageSize = 100
+	}
+
+	topicID = uid.DeShortID(topicID)
+	total, err := r.data.DB.Context(ctx).Where("topic_id = ?", topicID).Count(&entity.Post{})
+	if err != nil {
+		return nil, 0, errors.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+
+	posts := make([]*TopicPostView, 0)
+	query := `
+SELECT
+	p.id,
+	p.topic_id,
+	p.user_id,
+	p.original_text,
+	p.parsed_text,
+	p.merge_state,
+	p.archived_at,
+	p.vote_count,
+	p.status,
+	p.created_at,
+	u.username AS author_username,
+	u.display_name AS author_display_name
+FROM posts AS p
+LEFT JOIN user AS u ON u.id = p.user_id
+WHERE p.topic_id = ?
+ORDER BY p.created_at ASC
+LIMIT ? OFFSET ?`
+	if err := r.data.DB.Context(ctx).SQL(query, topicID, pageSize, (page-1)*pageSize).Find(&posts); err != nil {
+		return nil, 0, errors.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+	return posts, total, nil
+}
+
 func (r *ForumRepo) AddWikiRevision(ctx context.Context, revision *entity.WikiRevision) error {
 	id, err := r.genID(ctx, revision.TableName())
 	if err != nil {
@@ -225,6 +309,14 @@ func (r *ForumRepo) AddMergeJob(ctx context.Context, job *entity.MergeJob, postI
 		return err
 	}
 	job.ID = id
+	refIDs := make([]string, 0, len(postIDs))
+	for range postIDs {
+		refID, err := r.genID(ctx, entity.MergeJobPostRef{}.TableName())
+		if err != nil {
+			return err
+		}
+		refIDs = append(refIDs, refID)
+	}
 
 	_, err = r.data.DB.Transaction(func(session *xorm.Session) (any, error) {
 		session = session.Context(ctx)
@@ -232,16 +324,12 @@ func (r *ForumRepo) AddMergeJob(ctx context.Context, job *entity.MergeJob, postI
 			return nil, err
 		}
 
-		for _, rawPostID := range postIDs {
+		for i, rawPostID := range postIDs {
 			ref := &entity.MergeJobPostRef{
+				ID:         refIDs[i],
 				MergeJobID: job.ID,
 				PostID:     uid.DeShortID(rawPostID),
 			}
-			refID, err := r.genID(ctx, ref.TableName())
-			if err != nil {
-				return nil, err
-			}
-			ref.ID = refID
 			if _, err := session.Insert(ref); err != nil {
 				return nil, err
 			}
@@ -268,6 +356,45 @@ func (r *ForumRepo) GetMergeJob(ctx context.Context, jobID string) (*entity.Merg
 		return nil, nil, false, errors.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 	}
 	return job, refs, true, nil
+}
+
+func (r *ForumRepo) ListMergeJobsByTopic(
+	ctx context.Context,
+	topicID string,
+	status string,
+	page, pageSize int,
+) ([]*entity.MergeJob, int64, error) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 20
+	}
+	if pageSize > 100 {
+		pageSize = 100
+	}
+
+	topicID = uid.DeShortID(topicID)
+	buildBaseQuery := func() *xorm.Session {
+		session := r.data.DB.Context(ctx).Where("topic_id = ?", topicID)
+		if status != "" {
+			session = session.And("status = ?", status)
+		}
+		return session
+	}
+
+	total, err := buildBaseQuery().Count(&entity.MergeJob{})
+	if err != nil {
+		return nil, 0, errors.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+	jobs := make([]*entity.MergeJob, 0)
+	if err := buildBaseQuery().
+		Desc("created_at").
+		Limit(pageSize, (page-1)*pageSize).
+		Find(&jobs); err != nil {
+		return nil, 0, errors.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+	return jobs, total, nil
 }
 
 func (r *ForumRepo) UpdateMergeJob(ctx context.Context, job *entity.MergeJob, cols ...string) error {
@@ -356,9 +483,12 @@ func (r *ForumRepo) ListDocLinksBySources(ctx context.Context, sourceTopicIDs []
 func (r *ForumRepo) UpsertTopicSolution(ctx context.Context, topicID, postID, userID string) error {
 	topicID = uid.DeShortID(topicID)
 	postID = uid.DeShortID(postID)
-	userID = uid.DeShortID(userID)
+	newID, err := r.genID(ctx, entity.TopicSolution{}.TableName())
+	if err != nil {
+		return err
+	}
 
-	_, err := r.data.DB.Transaction(func(session *xorm.Session) (any, error) {
+	_, err = r.data.DB.Transaction(func(session *xorm.Session) (any, error) {
 		session = session.Context(ctx)
 		existing := &entity.TopicSolution{}
 		exist, err := session.Where("topic_id = ?", topicID).Get(existing)
@@ -372,11 +502,7 @@ func (r *ForumRepo) UpsertTopicSolution(ctx context.Context, topicID, postID, us
 				return nil, err
 			}
 		} else {
-			id, err := r.genID(ctx, existing.TableName())
-			if err != nil {
-				return nil, err
-			}
-			existing.ID = id
+			existing.ID = newID
 			existing.TopicID = topicID
 			existing.PostID = postID
 			existing.SetByUserID = userID
@@ -398,7 +524,7 @@ func (r *ForumRepo) UpsertTopicSolution(ctx context.Context, topicID, postID, us
 func (r *ForumRepo) UpsertTopicVote(ctx context.Context, topicID, userID string, value int) error {
 	return r.upsertVoteWithCounter(
 		ctx,
-		&entity.TopicVote{TopicID: uid.DeShortID(topicID), UserID: uid.DeShortID(userID), Value: value},
+		&entity.TopicVote{TopicID: uid.DeShortID(topicID), UserID: userID, Value: value},
 		func(session *xorm.Session, delta int) error {
 			if delta == 0 {
 				return nil
@@ -412,7 +538,7 @@ func (r *ForumRepo) UpsertTopicVote(ctx context.Context, topicID, userID string,
 func (r *ForumRepo) UpsertPostVote(ctx context.Context, postID, userID string, value int) error {
 	return r.upsertVoteWithCounter(
 		ctx,
-		&entity.PostVote{PostID: uid.DeShortID(postID), UserID: uid.DeShortID(userID), Value: value},
+		&entity.PostVote{PostID: uid.DeShortID(postID), UserID: userID, Value: value},
 		func(session *xorm.Session, delta int) error {
 			if delta == 0 {
 				return nil
@@ -428,7 +554,19 @@ func (r *ForumRepo) upsertVoteWithCounter(
 	payload any,
 	updateCounter func(session *xorm.Session, delta int) error,
 ) error {
-	_, err := r.data.DB.Transaction(func(session *xorm.Session) (any, error) {
+	var newID string
+	var err error
+	switch vote := payload.(type) {
+	case *entity.TopicVote:
+		newID, err = r.genID(ctx, vote.TableName())
+	case *entity.PostVote:
+		newID, err = r.genID(ctx, vote.TableName())
+	}
+	if err != nil {
+		return err
+	}
+
+	_, err = r.data.DB.Transaction(func(session *xorm.Session) (any, error) {
 		session = session.Context(ctx)
 		switch vote := payload.(type) {
 		case *entity.TopicVote:
@@ -445,11 +583,7 @@ func (r *ForumRepo) upsertVoteWithCounter(
 					return nil, err
 				}
 			} else {
-				id, err := r.genID(ctx, vote.TableName())
-				if err != nil {
-					return nil, err
-				}
-				vote.ID = id
+				vote.ID = newID
 				if _, err := session.Insert(vote); err != nil {
 					return nil, err
 				}
@@ -469,11 +603,7 @@ func (r *ForumRepo) upsertVoteWithCounter(
 					return nil, err
 				}
 			} else {
-				id, err := r.genID(ctx, vote.TableName())
-				if err != nil {
-					return nil, err
-				}
-				vote.ID = id
+				vote.ID = newID
 				if _, err := session.Insert(vote); err != nil {
 					return nil, err
 				}

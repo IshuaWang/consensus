@@ -38,7 +38,7 @@ const (
 	DocLinkTypeRelated = "related"
 )
 
-type Board struct {
+type Category struct {
 	ID          string    `xorm:"not null pk BIGINT(20) id"`
 	CreatedAt   time.Time `xorm:"not null default CURRENT_TIMESTAMP TIMESTAMP created_at"`
 	UpdatedAt   time.Time `xorm:"updated TIMESTAMP"`
@@ -49,15 +49,15 @@ type Board struct {
 	Status      int       `xorm:"not null default 1 INT(11) status"`
 }
 
-func (Board) TableName() string {
-	return "boards"
+func (Category) TableName() string {
+	return "categories"
 }
 
 type Topic struct {
 	ID                    string    `xorm:"not null pk BIGINT(20) id"`
 	CreatedAt             time.Time `xorm:"not null default CURRENT_TIMESTAMP TIMESTAMP created_at"`
 	UpdatedAt             time.Time `xorm:"updated TIMESTAMP"`
-	BoardID               string    `xorm:"not null default 0 BIGINT(20) INDEX board_id"`
+	CategoryID            string    `xorm:"not null default 0 BIGINT(20) INDEX category_id" json:"category_id"`
 	UserID                string    `xorm:"not null default 0 BIGINT(20) INDEX user_id"`
 	Title                 string    `xorm:"not null default '' VARCHAR(180) title"`
 	TopicKind             string    `xorm:"not null default 'discussion' VARCHAR(30) topic_kind"`
@@ -202,4 +202,3 @@ type TopicSolution struct {
 func (TopicSolution) TableName() string {
 	return "topic_solutions"
 }
-

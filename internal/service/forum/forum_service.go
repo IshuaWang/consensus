@@ -24,8 +24,8 @@ import (
 	"sort"
 	"time"
 
-	domainforum "github.com/apache/answer/internal/domain/forum"
 	"github.com/apache/answer/internal/base/reason"
+	domainforum "github.com/apache/answer/internal/domain/forum"
 	"github.com/apache/answer/internal/entity"
 	forumrepo "github.com/apache/answer/internal/repo/forum"
 	"github.com/apache/answer/internal/schema"
@@ -36,8 +36,8 @@ import (
 )
 
 type ForumService struct {
-	forumRepo            *forumrepo.ForumRepo
-	pluginCommonService  *plugin_common.PluginCommonService
+	forumRepo           *forumrepo.ForumRepo
+	pluginCommonService *plugin_common.PluginCommonService
 }
 
 func NewForumService(
@@ -50,29 +50,46 @@ func NewForumService(
 	}
 }
 
-func (s *ForumService) CreateBoard(ctx context.Context, req *schema.CreateBoardReq) (*entity.Board, error) {
-	board := &entity.Board{
+func (s *ForumService) CreateCategory(ctx context.Context, req *schema.CreateCategoryReq) (*entity.Category, error) {
+	category := &entity.Category{
 		CreatorID:   req.CreatorID,
 		Slug:        req.Slug,
 		Name:        req.Name,
 		Description: req.Description,
 		Status:      1,
 	}
-	if err := s.forumRepo.AddBoard(ctx, board); err != nil {
+	if err := s.forumRepo.AddCategory(ctx, category); err != nil {
 		return nil, err
 	}
-	return board, nil
+	return category, nil
+}
+
+func (s *ForumService) ListCategories(ctx context.Context, req *schema.CategoryListReq) (
+	categories []*entity.Category, total int64, err error,
+) {
+	return s.forumRepo.ListCategories(ctx, req.Page, req.PageSize)
+}
+
+func (s *ForumService) GetTopic(ctx context.Context, topicID string) (*entity.Topic, error) {
+	topic, exist, err := s.forumRepo.GetTopic(ctx, topicID)
+	if err != nil {
+		return nil, err
+	}
+	if !exist {
+		return nil, errors.NotFound(reason.ObjectNotFound)
+	}
+	return topic, nil
 }
 
 func (s *ForumService) CreateTopic(ctx context.Context, req *schema.CreateTopicReq) (*entity.Topic, error) {
-	if _, exist, err := s.forumRepo.GetBoard(ctx, req.BoardID); err != nil {
+	if _, exist, err := s.forumRepo.GetCategory(ctx, req.CategoryID); err != nil {
 		return nil, err
 	} else if !exist {
 		return nil, errors.NotFound(reason.ObjectNotFound)
 	}
 
 	topic := &entity.Topic{
-		BoardID:       uid.DeShortID(req.BoardID),
+		CategoryID:    uid.DeShortID(req.CategoryID),
 		UserID:        req.UserID,
 		Title:         req.Title,
 		TopicKind:     req.TopicKind,
@@ -85,10 +102,21 @@ func (s *ForumService) CreateTopic(ctx context.Context, req *schema.CreateTopicR
 	return topic, nil
 }
 
-func (s *ForumService) ListTopicsByBoard(ctx context.Context, boardID string, req *schema.TopicListReq) (
+func (s *ForumService) ListTopicsByCategory(ctx context.Context, categoryID string, req *schema.TopicListReq) (
 	topics []*entity.Topic, total int64, err error,
 ) {
-	return s.forumRepo.ListTopicsByBoard(ctx, boardID, req.Page, req.PageSize)
+	return s.forumRepo.ListTopicsByCategory(ctx, categoryID, req.Page, req.PageSize)
+}
+
+func (s *ForumService) ListTopicPosts(ctx context.Context, topicID string, req *schema.PostListReq) (
+	posts []*forumrepo.TopicPostView, total int64, err error,
+) {
+	if _, exist, err := s.forumRepo.GetTopic(ctx, topicID); err != nil {
+		return nil, 0, err
+	} else if !exist {
+		return nil, 0, errors.NotFound(reason.ObjectNotFound)
+	}
+	return s.forumRepo.ListTopicPosts(ctx, topicID, req.Page, req.PageSize)
 }
 
 func (s *ForumService) CreatePost(ctx context.Context, topicID string, req *schema.CreatePostReq) (*entity.Post, error) {
@@ -220,6 +248,33 @@ func (s *ForumService) GetMergeJob(ctx context.Context, topicID, jobID string) (
 		return nil, nil, errors.NotFound(reason.ObjectNotFound)
 	}
 	return job, refs, nil
+}
+
+func (s *ForumService) ListMergeJobs(
+	ctx context.Context,
+	topicID string,
+	req *schema.MergeJobListReq,
+) (jobs []*entity.MergeJob, total int64, err error) {
+	if _, exist, e := s.forumRepo.GetTopic(ctx, topicID); e != nil {
+		return nil, 0, e
+	} else if !exist {
+		return nil, 0, errors.NotFound(reason.ObjectNotFound)
+	}
+	return s.forumRepo.ListMergeJobsByTopic(ctx, topicID, req.Status, req.Page, req.PageSize)
+}
+
+func (s *ForumService) CanManageTopicWiki(ctx context.Context, topicID, userID string) (bool, error) {
+	if userID == "" {
+		return false, nil
+	}
+	topic, exist, err := s.forumRepo.GetTopic(ctx, topicID)
+	if err != nil {
+		return false, err
+	}
+	if !exist {
+		return false, errors.NotFound(reason.ObjectNotFound)
+	}
+	return topic.IsWikiEnabled && topic.UserID == userID, nil
 }
 
 func (s *ForumService) ApplyMergeJob(ctx context.Context, topicID, jobID string, req *schema.ApplyMergeJobReq) (*entity.WikiRevision, error) {

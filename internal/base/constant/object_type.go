@@ -29,7 +29,7 @@ const (
 	ReportObjectType     = "report"
 	BadgeObjectType      = "badge"
 	BadgeAwardObjectType = "badge_award"
-	BoardObjectType      = "boards"
+	CategoryObjectType   = "categories"
 	TopicObjectType      = "topics"
 	PostObjectType       = "posts"
 	WikiRevisionType     = "wiki_revisions"
@@ -53,7 +53,7 @@ var (
 		ReportObjectType:     8,
 		BadgeObjectType:      9,
 		BadgeAwardObjectType: 10,
-		BoardObjectType:      11,
+		CategoryObjectType:   11,
 		TopicObjectType:      12,
 		PostObjectType:       13,
 		WikiRevisionType:     14,
@@ -76,7 +76,7 @@ var (
 		8:  ReportObjectType,
 		9:  BadgeObjectType,
 		10: BadgeAwardObjectType,
-		11: BoardObjectType,
+		11: CategoryObjectType,
 		12: TopicObjectType,
 		13: PostObjectType,
 		14: WikiRevisionType,

@@ -79,7 +79,7 @@ var (
 		&entity.APIKey{},
 		&entity.AIConversation{},
 		&entity.AIConversationRecord{},
-		&entity.Board{},
+		&entity.Category{},
 		&entity.Topic{},
 		&entity.Post{},
 		&entity.WikiRevision{},

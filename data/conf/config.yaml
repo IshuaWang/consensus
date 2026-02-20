@@ -19,7 +19,7 @@ swaggerui:
   show: true
   protocol: http
   host: 127.0.0.1
-  address: ':9080'
+  address: :80
 ui:
   base_url: ""
   api_base_url: ""

@@ -11,10 +11,13 @@ This document describes the implemented MVP extension for forum-first knowledge 
 
 ### Forum Core
 
-- `POST /api/v1/boards`
-- `GET /api/v1/boards/{id}/topics`
+- `GET /api/v1/categories`
+- `POST /api/v1/categories`
+- `GET /api/v1/categories/{id}/topics`
+- `GET /api/v1/topics/{id}`
 - `POST /api/v1/topics`
 - `POST /api/v1/topics/{id}/posts`
+- `GET /api/v1/topics/{id}/posts`
 
 ### Wiki + Merge Workflow
 
@@ -52,7 +55,7 @@ This document describes the implemented MVP extension for forum-first knowledge 
 
 ## Data Model Additions
 
-- `boards`
+- `categories`
 - `topics`
 - `posts`
 - `wiki_revisions`
@@ -65,4 +68,3 @@ This document describes the implemented MVP extension for forum-first knowledge 
 - `topic_solutions`
 
 Migration version added: `v1.9.0`.
-

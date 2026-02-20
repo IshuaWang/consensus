@@ -37,31 +37,60 @@ func NewForumController(forumService *forum.ForumService) *ForumController {
 	return &ForumController{forumService: forumService}
 }
 
-func (fc *ForumController) CreateBoard(ctx *gin.Context) {
+func (fc *ForumController) CreateCategory(ctx *gin.Context) {
 	if !middleware.GetUserIsAdminModerator(ctx) {
 		handler.HandleResponse(ctx, errors.Forbidden(reason.ForbiddenError), nil)
 		return
 	}
-	req := &schema.CreateBoardReq{}
+	req := &schema.CreateCategoryReq{}
 	if handler.BindAndCheck(ctx, req) {
 		return
 	}
 	req.CreatorID = middleware.GetLoginUserIDFromContext(ctx)
-	board, err := fc.forumService.CreateBoard(ctx, req)
-	handler.HandleResponse(ctx, err, board)
+	category, err := fc.forumService.CreateCategory(ctx, req)
+	handler.HandleResponse(ctx, err, category)
 }
 
-func (fc *ForumController) ListBoardTopics(ctx *gin.Context) {
+func (fc *ForumController) ListCategories(ctx *gin.Context) {
+	req := &schema.CategoryListReq{}
+	if handler.BindAndCheck(ctx, req) {
+		return
+	}
+	categories, total, err := fc.forumService.ListCategories(ctx, req)
+	handler.HandleResponse(ctx, err, gin.H{
+		"list":  categories,
+		"total": total,
+	})
+}
+
+func (fc *ForumController) ListCategoryTopics(ctx *gin.Context) {
 	req := &schema.TopicListReq{}
 	if handler.BindAndCheck(ctx, req) {
 		return
 	}
-	boardID := ctx.Param("id")
-	topics, total, err := fc.forumService.ListTopicsByBoard(ctx, boardID, req)
+	categoryID := ctx.Param("id")
+	topics, total, err := fc.forumService.ListTopicsByCategory(ctx, categoryID, req)
 	handler.HandleResponse(ctx, err, gin.H{
 		"list":  topics,
 		"total": total,
 	})
+}
+
+func (fc *ForumController) ListTopicPosts(ctx *gin.Context) {
+	req := &schema.PostListReq{}
+	if handler.BindAndCheck(ctx, req) {
+		return
+	}
+	posts, total, err := fc.forumService.ListTopicPosts(ctx, ctx.Param("id"), req)
+	handler.HandleResponse(ctx, err, gin.H{
+		"list":  posts,
+		"total": total,
+	})
+}
+
+func (fc *ForumController) GetTopic(ctx *gin.Context) {
+	topic, err := fc.forumService.GetTopic(ctx, ctx.Param("id"))
+	handler.HandleResponse(ctx, err, topic)
 }
 
 func (fc *ForumController) CreateTopic(ctx *gin.Context) {
@@ -114,6 +143,18 @@ func (fc *ForumController) CreateMergeJob(ctx *gin.Context) {
 	handler.HandleResponse(ctx, err, mergeJob)
 }
 
+func (fc *ForumController) ListMergeJobs(ctx *gin.Context) {
+	req := &schema.MergeJobListReq{}
+	if handler.BindAndCheck(ctx, req) {
+		return
+	}
+	jobs, total, err := fc.forumService.ListMergeJobs(ctx, ctx.Param("id"), req)
+	handler.HandleResponse(ctx, err, gin.H{
+		"list":  jobs,
+		"total": total,
+	})
+}
+
 func (fc *ForumController) GetMergeJob(ctx *gin.Context) {
 	mergeJob, refs, err := fc.forumService.GetMergeJob(ctx, ctx.Param("id"), ctx.Param("jobId"))
 	handler.HandleResponse(ctx, err, gin.H{
@@ -123,7 +164,17 @@ func (fc *ForumController) GetMergeJob(ctx *gin.Context) {
 }
 
 func (fc *ForumController) ApplyMergeJob(ctx *gin.Context) {
-	if !middleware.GetUserIsAdminModerator(ctx) {
+	userID := middleware.GetLoginUserIDFromContext(ctx)
+	canApply := middleware.GetUserIsAdminModerator(ctx)
+	if !canApply {
+		allowed, err := fc.forumService.CanManageTopicWiki(ctx, ctx.Param("id"), userID)
+		if err != nil {
+			handler.HandleResponse(ctx, err, nil)
+			return
+		}
+		canApply = allowed
+	}
+	if !canApply {
 		handler.HandleResponse(ctx, errors.Forbidden(reason.ForbiddenError), nil)
 		return
 	}
@@ -131,7 +182,6 @@ func (fc *ForumController) ApplyMergeJob(ctx *gin.Context) {
 	if handler.BindAndCheck(ctx, req) {
 		return
 	}
-	userID := middleware.GetLoginUserIDFromContext(ctx)
 	req.ReviewerID = userID
 	req.OperatorID = userID
 	revision, err := fc.forumService.ApplyMergeJob(ctx, ctx.Param("id"), ctx.Param("jobId"), req)

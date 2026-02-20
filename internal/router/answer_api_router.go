@@ -226,9 +226,13 @@ func (a *AnswerAPIRouter) RegisterAuthUserWithAnyStatusAnswerAPIRouter(r *gin.Ro
 }
 
 func (a *AnswerAPIRouter) RegisterForumPublicAPIRouter(r *gin.RouterGroup) {
-	r.GET("/boards/:id/topics", a.forumController.ListBoardTopics)
+	r.GET("/categories", a.forumController.ListCategories)
+	r.GET("/categories/:id/topics", a.forumController.ListCategoryTopics)
+	r.GET("/topics/:id", a.forumController.GetTopic)
+	r.GET("/topics/:id/posts", a.forumController.ListTopicPosts)
 	r.GET("/topics/:id/wiki", a.forumController.GetTopicWiki)
 	r.GET("/topics/:id/wiki/revisions", a.forumController.ListTopicWikiRevisions)
+	r.GET("/topics/:id/merge-jobs", a.forumController.ListMergeJobs)
 	r.GET("/topics/:id/merge-jobs/:jobId", a.forumController.GetMergeJob)
 	r.GET("/topics/:id/contributors", a.forumController.ListTopicContributors)
 	r.GET("/docs/graph", a.forumController.GetDocGraph)
@@ -237,7 +241,7 @@ func (a *AnswerAPIRouter) RegisterForumPublicAPIRouter(r *gin.RouterGroup) {
 }
 
 func (a *AnswerAPIRouter) RegisterForumAuthAPIRouter(r *gin.RouterGroup) {
-	r.POST("/boards", a.forumController.CreateBoard)
+	r.POST("/categories", a.forumController.CreateCategory)
 	r.POST("/topics", a.forumController.CreateTopic)
 	r.POST("/topics/:id/posts", a.forumController.CreateTopicPost)
 
